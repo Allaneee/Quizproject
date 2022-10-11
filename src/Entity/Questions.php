@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\QuestionsRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: QuestionsRepository::class)]
@@ -12,9 +14,6 @@ class Questions
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
-
-    #[ORM\Column]
-    private ?int $idQuestions = null;
 
     #[ORM\Column(length: 255)]
     private ?string $wording = null;
@@ -28,21 +27,21 @@ class Questions
     #[ORM\Column(length: 255)]
     private ?string $correctAnswer = null;
 
+    #[ORM\ManyToOne(inversedBy: 'questionsList')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Quizz $quizz = null;
+
+    #[ORM\OneToMany(mappedBy: 'question', targetEntity: Answer::class, orphanRemoval: true)]
+    private Collection $answerList;
+
+    public function __construct()
+    {
+        $this->answerList = new ArrayCollection();
+    }
+
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getIdQuestions(): ?int
-    {
-        return $this->idQuestions;
-    }
-
-    public function setIdQuestions(int $idQuestions): self
-    {
-        $this->idQuestions = $idQuestions;
-
-        return $this;
     }
 
     public function getWording(): ?string
@@ -89,6 +88,48 @@ class Questions
     public function setCorrectAnswer(string $correctAnswer): self
     {
         $this->correctAnswer = $correctAnswer;
+
+        return $this;
+    }
+
+    public function getQuizz(): ?Quizz
+    {
+        return $this->quizz;
+    }
+
+    public function setQuizz(?Quizz $quizz): self
+    {
+        $this->quizz = $quizz;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Answer>
+     */
+    public function getAnswerList(): Collection
+    {
+        return $this->answerList;
+    }
+
+    public function addAnswerList(Answer $answerList): self
+    {
+        if (!$this->answerList->contains($answerList)) {
+            $this->answerList->add($answerList);
+            $answerList->setQuestion($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAnswerList(Answer $answerList): self
+    {
+        if ($this->answerList->removeElement($answerList)) {
+            // set the owning side to null (unless already changed)
+            if ($answerList->getQuestion() === $this) {
+                $answerList->setQuestion(null);
+            }
+        }
 
         return $this;
     }
